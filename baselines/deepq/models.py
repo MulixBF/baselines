@@ -1,3 +1,5 @@
+from __future__ import with_statement
+from __future__ import absolute_import
 import tensorflow as tf
 import tensorflow.contrib.layers as layers
 
@@ -15,7 +17,7 @@ def _mlp(hiddens, inpt, num_actions, scope, reuse=False, layer_norm=False):
 
 
 def mlp(hiddens=[], layer_norm=False):
-    """This model takes as input an observation and returns values of all actions.
+    u"""This model takes as input an observation and returns values of all actions.
 
     Parameters
     ----------
@@ -33,7 +35,7 @@ def mlp(hiddens=[], layer_norm=False):
 def _cnn_to_mlp(convs, hiddens, dueling, inpt, num_actions, scope, reuse=False, layer_norm=False):
     with tf.variable_scope(scope, reuse=reuse):
         out = inpt
-        with tf.variable_scope("convnet"):
+        with tf.variable_scope(u"convnet"):
             for num_outputs, kernel_size, stride in convs:
                 out = layers.convolution2d(out,
                                            num_outputs=num_outputs,
@@ -41,7 +43,7 @@ def _cnn_to_mlp(convs, hiddens, dueling, inpt, num_actions, scope, reuse=False, 
                                            stride=stride,
                                            activation_fn=tf.nn.relu)
         conv_out = layers.flatten(out)
-        with tf.variable_scope("action_value"):
+        with tf.variable_scope(u"action_value"):
             action_out = conv_out
             for hidden in hiddens:
                 action_out = layers.fully_connected(action_out, num_outputs=hidden, activation_fn=None)
@@ -51,7 +53,7 @@ def _cnn_to_mlp(convs, hiddens, dueling, inpt, num_actions, scope, reuse=False, 
             action_scores = layers.fully_connected(action_out, num_outputs=num_actions, activation_fn=None)
 
         if dueling:
-            with tf.variable_scope("state_value"):
+            with tf.variable_scope(u"state_value"):
                 state_out = conv_out
                 for hidden in hiddens:
                     state_out = layers.fully_connected(state_out, num_outputs=hidden, activation_fn=None)
@@ -68,7 +70,7 @@ def _cnn_to_mlp(convs, hiddens, dueling, inpt, num_actions, scope, reuse=False, 
 
 
 def cnn_to_mlp(convs, hiddens, dueling=False, layer_norm=False):
-    """This model takes as input an observation and returns values of all actions.
+    u"""This model takes as input an observation and returns values of all actions.
 
     Parameters
     ----------

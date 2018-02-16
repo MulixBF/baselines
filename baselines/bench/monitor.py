@@ -49,7 +49,7 @@ class Monitor(Wrapper):
             if v is None:
                 raise ValueError('Expected you to pass kwarg %s into reset'%k)
             self.current_reset_info[k] = v
-        return self.env.reset(**kwargs)
+        return self.env.reset_state(**kwargs)
 
     def step(self, action):
         if self.needs_reset:

@@ -1,3 +1,5 @@
+from __future__ import division
+from __future__ import absolute_import
 import numpy as np
 import tensorflow as tf
 from baselines.acktr.utils import dense, kl_div
@@ -10,16 +12,16 @@ class GaussianMlpPolicy(object):
         # (2) When computing loss functions, for the policy update
         # Variables specific to (1) have the word "sampled" in them,
         # whereas variables specific to (2) have the word "old" in them
-        ob_no = tf.placeholder(tf.float32, shape=[None, ob_dim*2], name="ob") # batch of observations
-        oldac_na = tf.placeholder(tf.float32, shape=[None, ac_dim], name="ac") # batch of actions previous actions
-        oldac_dist = tf.placeholder(tf.float32, shape=[None, ac_dim*2], name="oldac_dist") # batch of actions previous action distributions
-        adv_n = tf.placeholder(tf.float32, shape=[None], name="adv") # advantage function estimate
+        ob_no = tf.placeholder(tf.float32, shape=[None, ob_dim*2], name=u"ob") # batch of observations
+        oldac_na = tf.placeholder(tf.float32, shape=[None, ac_dim], name=u"ac") # batch of actions previous actions
+        oldac_dist = tf.placeholder(tf.float32, shape=[None, ac_dim*2], name=u"oldac_dist") # batch of actions previous action distributions
+        adv_n = tf.placeholder(tf.float32, shape=[None], name=u"adv") # advantage function estimate
         wd_dict = {}
-        h1 = tf.nn.tanh(dense(ob_no, 64, "h1", weight_init=U.normc_initializer(1.0), bias_init=0.0, weight_loss_dict=wd_dict))
-        h2 = tf.nn.tanh(dense(h1, 64, "h2", weight_init=U.normc_initializer(1.0), bias_init=0.0, weight_loss_dict=wd_dict))
-        mean_na = dense(h2, ac_dim, "mean", weight_init=U.normc_initializer(0.1), bias_init=0.0, weight_loss_dict=wd_dict) # Mean control output
+        h1 = tf.nn.tanh(dense(ob_no, 64, u"h1", weight_init=U.normc_initializer(1.0), bias_init=0.0, weight_loss_dict=wd_dict))
+        h2 = tf.nn.tanh(dense(h1, 64, u"h2", weight_init=U.normc_initializer(1.0), bias_init=0.0, weight_loss_dict=wd_dict))
+        mean_na = dense(h2, ac_dim, u"mean", weight_init=U.normc_initializer(0.1), bias_init=0.0, weight_loss_dict=wd_dict) # Mean control output
         self.wd_dict = wd_dict
-        self.logstd_1a = logstd_1a = tf.get_variable("logstd", [ac_dim], tf.float32, tf.zeros_initializer()) # Variance on outputs
+        self.logstd_1a = logstd_1a = tf.get_variable(u"logstd", [ac_dim], tf.float32, tf.zeros_initializer()) # Variance on outputs
         logstd_1a = tf.expand_dims(logstd_1a, 0)
         std_1a = tf.exp(logstd_1a)
         std_na = tf.tile(std_1a, [tf.shape(mean_na)[0], 1])

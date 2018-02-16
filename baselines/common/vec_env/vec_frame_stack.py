@@ -29,7 +29,7 @@ class VecFrameStack(VecEnvWrapper):
         """
         Reset all environments
         """
-        obs = self.venv.reset()
+        obs = self.venv.reset_state()
         self.stackedobs[...] = 0
         self.stackedobs[..., -obs.shape[-1]:] = obs
         return self.stackedobs

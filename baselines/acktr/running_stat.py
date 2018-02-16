@@ -1,3 +1,5 @@
+from __future__ import division
+from __future__ import absolute_import
 import numpy as np
 
 # http://www.johndcook.com/blog/standard_deviation/
@@ -36,7 +38,7 @@ def test_running_stat():
     for shp in ((), (3,), (3,4)):
         li = []
         rs = RunningStat(shp)
-        for _ in range(5):
+        for _ in xrange(5):
             val = np.random.randn(*shp)
             rs.push(val)
             li.append(val)

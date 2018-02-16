@@ -1,3 +1,5 @@
+from __future__ import with_statement
+from __future__ import absolute_import
 import os
 import tempfile
 import zipfile
@@ -13,14 +15,14 @@ from threading import Event
 # TODOS: use Azure snapshots instead of hacky backups
 
 def fixed_list_blobs(service, *args, **kwargs):
-    """By defualt list_containers only returns a subset of results.
+    u"""By defualt list_containers only returns a subset of results.
 
     This function attempts to fix this.
     """
     res = []
     next_marker = None
     while next_marker is None or len(next_marker) > 0:
-        kwargs['marker'] = next_marker
+        kwargs[u'marker'] = next_marker
         gen = service.list_blobs(*args, **kwargs)
         for b in gen:
             res.append(b.name)
@@ -32,7 +34,7 @@ def make_archive(source_path, dest_path):
     if source_path.endswith(os.path.sep):
         source_path = source_path.rstrip(os.path.sep)
     prefix_path = os.path.dirname(source_path)
-    with zipfile.ZipFile(dest_path, "w", compression=zipfile.ZIP_STORED) as zf:
+    with zipfile.ZipFile(dest_path, u"w", compression=zipfile.ZIP_STORED) as zf:
         if os.path.isdir(source_path):
             for dirname, _subdirs, files in os.walk(source_path):
                 zf.write(dirname, os.path.relpath(dirname, prefix_path))
@@ -56,7 +58,7 @@ class Container(object):
             self._service.create_container(self._container_name, fail_on_exist=False)
 
     def put(self, source_path, blob_name, callback=None):
-        """Upload a file or directory from `source_path` to azure blob `blob_name`.
+        u"""Upload a file or directory from `source_path` to azure blob `blob_name`.
 
         Upload progress can be traced by an optional callback.
         """
@@ -70,21 +72,21 @@ class Container(object):
 
         # Attempt to make backup if an existing version is already available
         try:
-            x_ms_copy_source = "https://{}.blob.core.windows.net/{}/{}".format(
+            x_ms_copy_source = u"https://{}.blob.core.windows.net/{}/{}".format(
                 self._account_name,
                 self._container_name,
                 blob_name
             )
             self._service.copy_blob(
                 container_name=self._container_name,
-                blob_name=blob_name + ".backup",
+                blob_name=blob_name + u".backup",
                 x_ms_copy_source=x_ms_copy_source
             )
         except AzureMissingResourceHttpError:
             pass
 
         with tempfile.TemporaryDirectory() as td:
-            arcpath = os.path.join(td, "archive.zip")
+            arcpath = os.path.join(td, u"archive.zip")
             make_archive(source_path, arcpath)
             self._service.put_block_blob_from_path(
                 container_name=self._container_name,
@@ -96,7 +98,7 @@ class Container(object):
             upload_done.wait()
 
     def get(self, dest_path, blob_name, callback=None):
-        """Download a file or directory to `dest_path` to azure blob `blob_name`.
+        u"""Download a file or directory to `dest_path` to azure blob `blob_name`.
 
         Warning! If directory is downloaded the `dest_path` is the parent directory.
 
@@ -111,19 +113,19 @@ class Container(object):
                 download_done.set()
 
         with tempfile.TemporaryDirectory() as td:
-            arcpath = os.path.join(td, "archive.zip")
-            for backup_blob_name in [blob_name, blob_name + '.backup']:
+            arcpath = os.path.join(td, u"archive.zip")
+            for backup_blob_name in [blob_name, blob_name + u'.backup']:
                 try:
                     properties = self._service.get_blob_properties(
                         blob_name=backup_blob_name,
                         container_name=self._container_name
                     )
-                    if hasattr(properties, 'properties'):
+                    if hasattr(properties, u'properties'):
                         # Annoyingly, Azure has changed the API and this now returns a blob
                         # instead of it's properties with up-to-date azure package.
                         blob_size = properties.properties.content_length
                     else:
-                        blob_size = properties['content-length']
+                        blob_size = properties[u'content-length']
                     if int(blob_size) > 0:
                         self._service.get_blob_to_path(
                             container_name=self._container_name,
@@ -139,11 +141,11 @@ class Container(object):
         return False
 
     def list(self, prefix=None):
-        """List all blobs in the container."""
+        u"""List all blobs in the container."""
         return fixed_list_blobs(self._service, self._container_name, prefix=prefix)
 
     def exists(self, blob_name):
-        """Returns true if `blob_name` exists in container."""
+        u"""Returns true if `blob_name` exists in container."""
         try:
             self._service.get_blob_properties(
                 blob_name=blob_name,

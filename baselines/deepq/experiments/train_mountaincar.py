@@ -1,10 +1,11 @@
+from __future__ import absolute_import
 import gym
 
 from baselines import deepq
 
 
 def main():
-    env = gym.make("MountainCar-v0")
+    env = gym.make(u"MountainCar-v0")
     # Enabling layer_norm here is import for parameter space noise!
     model = deepq.models.mlp([64], layer_norm=True)
     act = deepq.learn(
@@ -18,9 +19,9 @@ def main():
         print_freq=10,
         param_noise=True
     )
-    print("Saving model to mountaincar_model.pkl")
-    act.save("mountaincar_model.pkl")
+    print u"Saving model to mountaincar_model.pkl"
+    act.save(u"mountaincar_model.pkl")
 
 
-if __name__ == '__main__':
+if __name__ == u'__main__':
     main()

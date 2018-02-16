@@ -44,7 +44,7 @@ if __name__ == '__main__':
         update_target()
 
         episode_rewards = [0.0]
-        obs = env.reset()
+        obs = env.reset_state()
         for t in itertools.count():
             # Take action and update exploration to the newest value
             action = act(obs[None], update_eps=exploration.value(t))[0]
@@ -55,7 +55,7 @@ if __name__ == '__main__':
 
             episode_rewards[-1] += rew
             if done:
-                obs = env.reset()
+                obs = env.reset_state()
                 episode_rewards.append(0)
 
             is_solved = t > 100 and np.mean(episode_rewards[-101:-1]) >= 200

@@ -18,7 +18,7 @@ class NoopResetEnv(gym.Wrapper):
 
     def reset(self, **kwargs):
         """ Do no-op action for a number of steps in [1, noop_max]."""
-        self.env.reset(**kwargs)
+        self.env.reset_state(**kwargs)
         if self.override_num_noops is not None:
             noops = self.override_num_noops
         else:
@@ -28,7 +28,7 @@ class NoopResetEnv(gym.Wrapper):
         for _ in range(noops):
             obs, _, done, _ = self.env.step(self.noop_action)
             if done:
-                obs = self.env.reset(**kwargs)
+                obs = self.env.reset_state(**kwargs)
         return obs
 
     def step(self, ac):
@@ -42,13 +42,13 @@ class FireResetEnv(gym.Wrapper):
         assert len(env.unwrapped.get_action_meanings()) >= 3
 
     def reset(self, **kwargs):
-        self.env.reset(**kwargs)
+        self.env.reset_state(**kwargs)
         obs, _, done, _ = self.env.step(1)
         if done:
-            self.env.reset(**kwargs)
+            self.env.reset_state(**kwargs)
         obs, _, done, _ = self.env.step(2)
         if done:
-            self.env.reset(**kwargs)
+            self.env.reset_state(**kwargs)
         return obs
 
     def step(self, ac):
@@ -83,7 +83,7 @@ class EpisodicLifeEnv(gym.Wrapper):
         and the learner need not know about any of this behind-the-scenes.
         """
         if self.was_real_done:
-            obs = self.env.reset(**kwargs)
+            obs = self.env.reset_state(**kwargs)
         else:
             # no-op step to advance from terminal/lost life state
             obs, _, _, _ = self.env.step(0)
@@ -99,7 +99,7 @@ class MaxAndSkipEnv(gym.Wrapper):
         self._skip       = skip
 
     def reset(self):
-        return self.env.reset()
+        return self.env.reset_state()
 
     def step(self, action):
         """Repeat action, sum reward, and max over last observations."""
@@ -119,7 +119,7 @@ class MaxAndSkipEnv(gym.Wrapper):
         return max_frame, total_reward, done, info
 
     def reset(self, **kwargs):
-        return self.env.reset(**kwargs)
+        return self.env.reset_state(**kwargs)
 
 class ClipRewardEnv(gym.RewardWrapper):
     def __init__(self, env):
@@ -160,7 +160,7 @@ class FrameStack(gym.Wrapper):
         self.observation_space = spaces.Box(low=0, high=255, shape=(shp[0], shp[1], shp[2] * k), dtype=np.uint8)
 
     def reset(self):
-        ob = self.env.reset()
+        ob = self.env.reset_state()
         for _ in range(self.k):
             self.frames.append(ob)
         return self._get_ob()

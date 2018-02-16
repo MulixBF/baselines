@@ -1,37 +1,43 @@
-from abc import ABC, abstractmethod
+from __future__ import absolute_import
+from abc import abstractmethod
 from baselines import logger
 
+
 class AlreadySteppingError(Exception):
-    """
+    u"""
     Raised when an asynchronous step is running while
     step_async() is called again.
     """
+
     def __init__(self):
-        msg = 'already running an async step'
+        msg = u'already running an async step'
         Exception.__init__(self, msg)
 
+
 class NotSteppingError(Exception):
-    """
+    u"""
     Raised when an asynchronous step is not running but
     step_wait() is called.
     """
+
     def __init__(self):
-        msg = 'not running an async step'
+        msg = u'not running an async step'
         Exception.__init__(self, msg)
 
-class VecEnv(ABC):
 
+class VecEnv(object):
     def __init__(self, num_envs, observation_space, action_space):
         self.num_envs = num_envs
         self.observation_space = observation_space
         self.action_space = action_space
 
-    """
+    u"""
     An abstract asynchronous, vectorized environment.
     """
+
     @abstractmethod
     def reset(self):
-        """
+        u"""
         Reset all the environments and return an array of
         observations.
 
@@ -43,7 +49,7 @@ class VecEnv(ABC):
 
     @abstractmethod
     def step_async(self, actions):
-        """
+        u"""
         Tell all the environments to start taking a step
         with the given actions.
         Call step_wait() to get the results of the step.
@@ -55,7 +61,7 @@ class VecEnv(ABC):
 
     @abstractmethod
     def step_wait(self):
-        """
+        u"""
         Wait for the step taken with step_async().
 
         Returns (obs, rews, dones, infos):
@@ -68,7 +74,7 @@ class VecEnv(ABC):
 
     @abstractmethod
     def close(self):
-        """
+        u"""
         Clean up the environments' resources.
         """
         pass
@@ -78,15 +84,16 @@ class VecEnv(ABC):
         return self.step_wait()
 
     def render(self):
-        logger.warn('Render not defined for %s'%self)
+        logger.warn(u'Render not defined for %s' % self)
+
 
 class VecEnvWrapper(VecEnv):
     def __init__(self, venv, observation_space=None, action_space=None):
         self.venv = venv
-        VecEnv.__init__(self, 
-            num_envs=venv.num_envs,
-            observation_space=observation_space or venv.observation_space, 
-            action_space=action_space or venv.action_space)
+        VecEnv.__init__(self,
+                        num_envs=venv.num_envs,
+                        observation_space=observation_space or venv.observation_space,
+                        action_space=action_space or venv.action_space)
 
     def step_async(self, actions):
         self.venv.step_async(actions)
@@ -105,15 +112,19 @@ class VecEnvWrapper(VecEnv):
     def render(self):
         self.venv.render()
 
+
 class CloudpickleWrapper(object):
-    """
+    u"""
     Uses cloudpickle to serialize contents (otherwise multiprocessing tries to use pickle)
     """
+
     def __init__(self, x):
         self.x = x
+
     def __getstate__(self):
         import cloudpickle
         return cloudpickle.dumps(self.x)
+
     def __setstate__(self, ob):
         import pickle
         self.x = pickle.loads(ob)

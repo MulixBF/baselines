@@ -43,5 +43,5 @@ class VecNormalize(VecEnvWrapper):
         """
         Reset all environments
         """
-        obs = self.venv.reset()
+        obs = self.venv.reset_state()
         return self._obfilt(obs)

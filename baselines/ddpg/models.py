@@ -1,3 +1,5 @@
+from __future__ import with_statement
+from __future__ import absolute_import
 import tensorflow as tf
 import tensorflow.contrib as tc
 
@@ -16,11 +18,11 @@ class Model(object):
 
     @property
     def perturbable_vars(self):
-        return [var for var in self.trainable_vars if 'LayerNorm' not in var.name]
+        return [var for var in self.trainable_vars if u'LayerNorm' not in var.name]
 
 
 class Actor(Model):
-    def __init__(self, nb_actions, name='actor', layer_norm=True):
+    def __init__(self, nb_actions, name=u'actor', layer_norm=True):
         super(Actor, self).__init__(name=name)
         self.nb_actions = nb_actions
         self.layer_norm = layer_norm
@@ -47,7 +49,7 @@ class Actor(Model):
 
 
 class Critic(Model):
-    def __init__(self, name='critic', layer_norm=True):
+    def __init__(self, name=u'critic', layer_norm=True):
         super(Critic, self).__init__(name=name)
         self.layer_norm = layer_norm
 
@@ -73,5 +75,5 @@ class Critic(Model):
 
     @property
     def output_vars(self):
-        output_vars = [var for var in self.trainable_vars if 'output' in var.name]
+        output_vars = [var for var in self.trainable_vars if u'output' in var.name]
         return output_vars

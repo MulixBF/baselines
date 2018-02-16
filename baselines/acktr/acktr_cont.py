@@ -1,3 +1,5 @@
+from __future__ import division
+from __future__ import absolute_import
 import numpy as np
 import tensorflow as tf
 from baselines import logger
@@ -6,14 +8,16 @@ from baselines.common import tf_util as U
 from baselines.acktr import kfac
 from baselines.common.filters import ZFilter
 
+
 def pathlength(path):
-    return path["reward"].shape[0]# Loss function that we'll differentiate to get the policy gradient
+    return path[u"reward"].shape[0]  # Loss function that we'll differentiate to get the policy gradient
+
 
 def rollout(env, policy, max_pathlength, animate=False, obfilter=None):
-    """
+    u"""
     Simulate the env and policy for max_pathlength steps
     """
-    ob = env.reset()
+    ob = env.reset_state()
     prev_ob = np.float32(np.zeros(ob.shape))
     if obfilter: ob = obfilter(ob)
     terminated = False
@@ -23,7 +27,7 @@ def rollout(env, policy, max_pathlength, animate=False, obfilter=None):
     ac_dists = []
     logps = []
     rewards = []
-    for _ in range(max_pathlength):
+    for _ in xrange(max_pathlength):
         if animate:
             env.render()
         state = np.concatenate([ob, prev_ob], -1)
@@ -41,9 +45,9 @@ def rollout(env, policy, max_pathlength, animate=False, obfilter=None):
         if done:
             terminated = True
             break
-    return {"observation" : np.array(obs), "terminated" : terminated,
-            "reward" : np.array(rewards), "action" : np.array(acs),
-            "action_dist": np.array(ac_dists), "logp" : np.array(logps)}
+    return {u"observation" : np.array(obs), u"terminated" : terminated,
+            u"reward" : np.array(rewards), u"action" : np.array(acs),
+            u"action_dist": np.array(ac_dists), u"logp" : np.array(logps)}
 
 def learn(env, policy, vf, gamma, lam, timesteps_per_batch, num_timesteps,
     animate=False, callback=None, desired_kl=0.002):
@@ -51,14 +55,14 @@ def learn(env, policy, vf, gamma, lam, timesteps_per_batch, num_timesteps,
     obfilter = ZFilter(env.observation_space.shape)
 
     max_pathlength = env.spec.timestep_limit
-    stepsize = tf.Variable(initial_value=np.float32(np.array(0.03)), name='stepsize')
+    stepsize = tf.Variable(initial_value=np.float32(np.array(0.03)), name=u'stepsize')
     inputs, loss, loss_sampled = policy.update_info
     optim = kfac.KfacOptimizer(learning_rate=stepsize, cold_lr=stepsize*(1-0.9), momentum=0.9, kfac_update=2,\
                                 epsilon=1e-2, stats_decay=0.99, async=1, cold_iter=1,
                                 weight_decay_dict=policy.wd_dict, max_grad_norm=None)
     pi_var_list = []
     for var in tf.trainable_variables():
-        if "pi" in var.name:
+        if u"pi" in var.name:
             pi_var_list.append(var)
 
     update_op, q_runner = optim.minimize(loss, loss_sampled, var_list=pi_var_list)
@@ -77,7 +81,7 @@ def learn(env, policy, vf, gamma, lam, timesteps_per_batch, num_timesteps,
     while True:
         if timesteps_so_far > num_timesteps:
             break
-        logger.log("********** Iteration %i ************"%i)
+        logger.log(u"********** Iteration %i ************"%i)
 
         # Collect paths until we have enough timesteps
         timesteps_this_batch = 0
@@ -95,11 +99,11 @@ def learn(env, policy, vf, gamma, lam, timesteps_per_batch, num_timesteps,
         vtargs = []
         advs = []
         for path in paths:
-            rew_t = path["reward"]
+            rew_t = path[u"reward"]
             return_t = common.discount(rew_t, gamma)
             vtargs.append(return_t)
             vpred_t = vf.predict(path)
-            vpred_t = np.append(vpred_t, 0.0 if path["terminated"] else vpred_t[-1])
+            vpred_t = np.append(vpred_t, 0.0 if path[u"terminated"] else vpred_t[-1])
             delta_t = rew_t + gamma*vpred_t[1:] - vpred_t[:-1]
             adv_t = common.discount(delta_t, gamma * lam)
             advs.append(adv_t)
@@ -107,9 +111,9 @@ def learn(env, policy, vf, gamma, lam, timesteps_per_batch, num_timesteps,
         vf.fit(paths, vtargs)
 
         # Build arrays for policy update
-        ob_no = np.concatenate([path["observation"] for path in paths])
-        action_na = np.concatenate([path["action"] for path in paths])
-        oldac_dist = np.concatenate([path["action_dist"] for path in paths])
+        ob_no = np.concatenate([path[u"observation"] for path in paths])
+        action_na = np.concatenate([path[u"action"] for path in paths])
+        oldac_dist = np.concatenate([path[u"action_dist"] for path in paths])
         adv_n = np.concatenate(advs)
         standardized_adv_n = (adv_n - adv_n.mean()) / (adv_n.std() + 1e-8)
 
@@ -121,18 +125,18 @@ def learn(env, policy, vf, gamma, lam, timesteps_per_batch, num_timesteps,
         # Adjust stepsize
         kl = policy.compute_kl(ob_no, oldac_dist)
         if kl > desired_kl * 2:
-            logger.log("kl too high")
+            logger.log(u"kl too high")
             tf.assign(stepsize, tf.maximum(min_stepsize, stepsize / 1.5)).eval()
         elif kl < desired_kl / 2:
-            logger.log("kl too low")
+            logger.log(u"kl too low")
             tf.assign(stepsize, tf.minimum(max_stepsize, stepsize * 1.5)).eval()
         else:
-            logger.log("kl just right!")
+            logger.log(u"kl just right!")
 
-        logger.record_tabular("EpRewMean", np.mean([path["reward"].sum() for path in paths]))
-        logger.record_tabular("EpRewSEM", np.std([path["reward"].sum()/np.sqrt(len(paths)) for path in paths]))
-        logger.record_tabular("EpLenMean", np.mean([pathlength(path) for path in paths]))
-        logger.record_tabular("KL", kl)
+        logger.record_tabular(u"EpRewMean", np.mean([path[u"reward"].sum() for path in paths]))
+        logger.record_tabular(u"EpRewSEM", np.std([path[u"reward"].sum()/np.sqrt(len(paths)) for path in paths]))
+        logger.record_tabular(u"EpLenMean", np.mean([pathlength(path) for path in paths]))
+        logger.record_tabular(u"KL", kl)
         if callback:
             callback()
         logger.dump_tabular()

@@ -8,9 +8,20 @@ from baselines import logger
 from collections import deque
 from baselines.common import explained_variance
 
+
 class Model(object):
-    def __init__(self, *, policy, ob_space, ac_space, nbatch_act, nbatch_train,
-                nsteps, ent_coef, vf_coef, max_grad_norm):
+
+    def __init__(self,
+                 policy,
+                 ob_space,
+                 ac_space,
+                 nbatch_act,
+                 nbatch_train,
+                 nsteps,
+                 ent_coef,
+                 vf_coef,
+                 max_grad_norm):
+
         sess = tf.get_default_session()
 
         act_model = policy(sess, ob_space, ac_space, nbatch_act, 1, reuse=False)
@@ -60,6 +71,7 @@ class Model(object):
                 [pg_loss, vf_loss, entropy, approxkl, clipfrac, _train],
                 td_map
             )[:-1]
+
         self.loss_names = ['policy_loss', 'value_loss', 'policy_entropy', 'approxkl', 'clipfrac']
 
         def save(save_path):
@@ -82,24 +94,24 @@ class Model(object):
         self.initial_state = act_model.initial_state
         self.save = save
         self.load = load
-        tf.global_variables_initializer().run(session=sess) #pylint: disable=E1101
+        tf.global_variables_initializer().run(session=sess)
+
 
 class Runner(object):
 
-    def __init__(self, *, env, model, nsteps, gamma, lam):
+    def __init__(self, env, model, nsteps, gamma, lam):
         self.env = env
         self.model = model
-        nenv = env.num_envs
-        self.obs = np.zeros((nenv,) + env.observation_space.shape, dtype=model.train_model.X.dtype.name)
-        self.obs[:] = env.reset()
+        self.obs = np.zeros((1,) + env.observation_space.shape, dtype=model.train_model.X.dtype.name)
+        self.obs[:] = env.reset_state()
         self.gamma = gamma
         self.lam = lam
         self.nsteps = nsteps
         self.states = model.initial_state
-        self.dones = [False for _ in range(nenv)]
+        self.dones = [False for _ in range(1)]
 
     def run(self):
-        mb_obs, mb_rewards, mb_actions, mb_values, mb_dones, mb_neglogpacs = [],[],[],[],[],[]
+        mb_obs, mb_rewards, mb_actions, mb_values, mb_dones, mb_neglogpacs = [], [], [], [], [], []
         mb_states = self.states
         epinfos = []
         for _ in range(self.nsteps):
@@ -112,9 +124,11 @@ class Runner(object):
             self.obs[:], rewards, self.dones, infos = self.env.step(actions)
             for info in infos:
                 maybeepinfo = info.get('episode')
-                if maybeepinfo: epinfos.append(maybeepinfo)
+                if maybeepinfo:
+                    epinfos.append(maybeepinfo)
             mb_rewards.append(rewards)
-        #batch of steps to batch of rollouts
+
+        # batch of steps to batch of rollouts
         mb_obs = np.asarray(mb_obs, dtype=self.obs.dtype)
         mb_rewards = np.asarray(mb_rewards, dtype=np.float32)
         mb_actions = np.asarray(mb_actions)
@@ -122,7 +136,7 @@ class Runner(object):
         mb_neglogpacs = np.asarray(mb_neglogpacs, dtype=np.float32)
         mb_dones = np.asarray(mb_dones, dtype=np.bool)
         last_values = self.model.value(self.obs, self.states, self.dones)
-        #discount/bootstrap off value fn
+        # discount/bootstrap off value fn
         mb_returns = np.zeros_like(mb_rewards)
         mb_advs = np.zeros_like(mb_rewards)
         lastgaelam = 0
@@ -136,8 +150,17 @@ class Runner(object):
             delta = mb_rewards[t] + self.gamma * nextvalues * nextnonterminal - mb_values[t]
             mb_advs[t] = lastgaelam = delta + self.gamma * self.lam * nextnonterminal * lastgaelam
         mb_returns = mb_advs + mb_values
-        return (*map(sf01, (mb_obs, mb_returns, mb_dones, mb_actions, mb_values, mb_neglogpacs)),
-            mb_states, epinfos)
+
+        return (sf01(mb_obs),
+                sf01(mb_returns),
+                sf01(mb_dones),
+                sf01(mb_actions),
+                sf01(mb_values),
+                sf01(mb_neglogpacs),
+                mb_states,
+                epinfos)
+
+
 # obs, returns, masks, actions, values, neglogpacs, states = runner.run()
 def sf01(arr):
     """
@@ -146,15 +169,28 @@ def sf01(arr):
     s = arr.shape
     return arr.swapaxes(0, 1).reshape(s[0] * s[1], *s[2:])
 
+
 def constfn(val):
     def f(_):
         return val
     return f
 
-def learn(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
-            vf_coef=0.5,  max_grad_norm=0.5, gamma=0.99, lam=0.95,
-            log_interval=10, nminibatches=4, noptepochs=4, cliprange=0.2,
-            save_interval=0):
+
+def learn(policy,
+          env,
+          nsteps,
+          total_timesteps,
+          ent_coef,
+          lr,
+          vf_coef=0.5,
+          max_grad_norm=0.5,
+          gamma=0.99,
+          lam=0.95,
+          log_interval=10,
+          nminibatches=4,
+          noptepochs=4,
+          cliprange=0.2,
+          save_interval=0):
 
     if isinstance(lr, float): lr = constfn(lr)
     else: assert callable(lr)
@@ -162,15 +198,21 @@ def learn(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
     else: assert callable(cliprange)
     total_timesteps = int(total_timesteps)
 
-    nenvs = env.num_envs
     ob_space = env.observation_space
     ac_space = env.action_space
-    nbatch = nenvs * nsteps
+    nbatch = nsteps
     nbatch_train = nbatch // nminibatches
 
-    make_model = lambda : Model(policy=policy, ob_space=ob_space, ac_space=ac_space, nbatch_act=nenvs, nbatch_train=nbatch_train,
-                    nsteps=nsteps, ent_coef=ent_coef, vf_coef=vf_coef,
-                    max_grad_norm=max_grad_norm)
+    make_model = lambda: Model(policy=policy,
+                               ob_space=ob_space,
+                               ac_space=ac_space,
+                               nbatch_act=1,
+                               nbatch_train=nbatch_train,
+                               nsteps=nsteps,
+                               ent_coef=ent_coef,
+                               vf_coef=vf_coef,
+                               max_grad_norm=max_grad_norm)
+
     if save_interval and logger.get_dir():
         import cloudpickle
         with open(osp.join(logger.get_dir(), 'make_model.pkl'), 'wb') as fh:
@@ -189,10 +231,10 @@ def learn(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
         frac = 1.0 - (update - 1.0) / nupdates
         lrnow = lr(frac)
         cliprangenow = cliprange(frac)
-        obs, returns, masks, actions, values, neglogpacs, states, epinfos = runner.run() #pylint: disable=E0632
+        obs, returns, masks, actions, values, neglogpacs, states, epinfos = runner.run()
         epinfobuf.extend(epinfos)
         mblossvals = []
-        if states is None: # nonrecurrent version
+        if states is None:  # nonrecurrent version
             inds = np.arange(nbatch)
             for _ in range(noptepochs):
                 np.random.shuffle(inds)
@@ -201,21 +243,28 @@ def learn(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
                     mbinds = inds[start:end]
                     slices = (arr[mbinds] for arr in (obs, returns, masks, actions, values, neglogpacs))
                     mblossvals.append(model.train(lrnow, cliprangenow, *slices))
-        else: # recurrent version
-            assert nenvs % nminibatches == 0
-            envsperbatch = nenvs // nminibatches
-            envinds = np.arange(nenvs)
-            flatinds = np.arange(nenvs * nsteps).reshape(nenvs, nsteps)
+        else:  # recurrent version
+            assert nminibatches == 0
+            envsperbatch = 1
+            envinds = np.arange(1)
+            flatinds = np.arange(1 * nsteps).reshape(1, nsteps)
             envsperbatch = nbatch_train // nsteps
             for _ in range(noptepochs):
                 np.random.shuffle(envinds)
-                for start in range(0, nenvs, envsperbatch):
+                for start in range(0, 1, envsperbatch):
                     end = start + envsperbatch
                     mbenvinds = envinds[start:end]
                     mbflatinds = flatinds[mbenvinds].ravel()
-                    slices = (arr[mbflatinds] for arr in (obs, returns, masks, actions, values, neglogpacs))
                     mbstates = states[mbenvinds]
-                    mblossvals.append(model.train(lrnow, cliprangenow, *slices, mbstates))
+                    mblossvals.append(model.train(lrnow,
+                                                  cliprangenow,
+                                                  obs[mbflatinds],
+                                                  returns[mbflatinds],
+                                                  masks[mbflatinds],
+                                                  actions[mbflatinds],
+                                                  values[mbflatinds],
+                                                  neglogpacs[mbflatinds],
+                                                  mbstates))
 
         lossvals = np.mean(mblossvals, axis=0)
         tnow = time.time()
@@ -235,11 +284,13 @@ def learn(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
             logger.dumpkvs()
         if save_interval and (update % save_interval == 0 or update == 1) and logger.get_dir():
             checkdir = osp.join(logger.get_dir(), 'checkpoints')
-            os.makedirs(checkdir, exist_ok=True)
+            if not os.path.exists(checkdir): os.makedirs(checkdir)
             savepath = osp.join(checkdir, '%.5i'%update)
             print('Saving to', savepath)
             model.save(savepath)
+
     env.close()
+
 
 def safemean(xs):
     return np.nan if len(xs) == 0 else np.mean(xs)

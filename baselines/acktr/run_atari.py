@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from __future__ import absolute_import
 from baselines import logger
 from baselines.acktr.acktr_disc import learn
 from baselines.common.cmd_util import make_atari_env, atari_arg_parser
@@ -17,5 +18,5 @@ def main():
     logger.configure()
     train(args.env, num_timesteps=args.num_timesteps, seed=args.seed, num_cpu=32)
 
-if __name__ == '__main__':
+if __name__ == u'__main__':
     main()

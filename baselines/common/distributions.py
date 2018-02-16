@@ -1,10 +1,14 @@
+from __future__ import division
+from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 import baselines.common.tf_util as U
 from tensorflow.python.ops import math_ops
+from itertools import imap
+from itertools import izip
 
 class Pd(object):
-    """
+    u"""
     A particular probability distribution
     """
     def flatparam(self):
@@ -24,7 +28,7 @@ class Pd(object):
         return - self.neglogp(x)
 
 class PdType(object):
-    """
+    u"""
     Parametrized family of probability distributions
     """
     def pdclass(self):
@@ -157,15 +161,15 @@ class CategoricalPd(Pd):
 class MultiCategoricalPd(Pd):
     def __init__(self, nvec, flat):
         self.flat = flat
-        self.categoricals = list(map(CategoricalPd, tf.split(flat, nvec, axis=-1)))
+        self.categoricals = list(imap(CategoricalPd, tf.split(flat, nvec, axis=-1)))
     def flatparam(self):
         return self.flat
     def mode(self):
         return tf.cast(tf.stack([p.mode() for p in self.categoricals], axis=-1), tf.int32)
     def neglogp(self, x):
-        return tf.add_n([p.neglogp(px) for p, px in zip(self.categoricals, tf.unstack(x, axis=-1))])
+        return tf.add_n([p.neglogp(px) for p, px in izip(self.categoricals, tf.unstack(x, axis=-1))])
     def kl(self, other):
-        return tf.add_n([p.kl(q) for p, q in zip(self.categoricals, other.categoricals)])
+        return tf.add_n([p.kl(q) for p, q in izip(self.categoricals, other.categoricals)])
     def entropy(self):
         return tf.add_n([p.entropy() for p in self.categoricals])
     def sample(self):
@@ -291,5 +295,5 @@ def validate_probtype(probtype, pdparam):
     klval_ll = - entval - logliks.mean() #pylint: disable=E1101
     klval_ll_stderr = logliks.std() / np.sqrt(N) #pylint: disable=E1101
     assert np.abs(klval - klval_ll) < 3 * klval_ll_stderr # within 3 sigmas
-    print('ok on', probtype, pdparam)
+    print u'ok on', probtype, pdparam
 

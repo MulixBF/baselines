@@ -3,8 +3,10 @@ import tensorflow as tf
 import gym
 from baselines.common.distributions import make_pdtype
 
+
 class CnnPolicy(object):
     recurrent = False
+
     def __init__(self, name, ob_space, ac_space, kind='large'):
         with tf.variable_scope(name):
             self._init(ob_space, ac_space, kind)
@@ -33,24 +35,27 @@ class CnnPolicy(object):
         else:
             raise NotImplementedError
 
-        logits = tf.layers.dense(x, pdtype.param_shape()[0], name='logits', kernel_initializer=U.normc_initializer(0.01))
+        logits = tf.layers.dense(x, pdtype.param_shape()[0], name='logits',
+                                 kernel_initializer=U.normc_initializer(0.01))
         self.pd = pdtype.pdfromflat(logits)
-        self.vpred = tf.layers.dense(x, 1, name='value', kernel_initializer=U.normc_initializer(1.0))[:,0]
+        self.vpred = tf.layers.dense(x, 1, name='value', kernel_initializer=U.normc_initializer(1.0))[:, 0]
 
         self.state_in = []
         self.state_out = []
 
         stochastic = tf.placeholder(dtype=tf.bool, shape=())
-        ac = self.pd.sample() # XXX
+        ac = self.pd.sample()  # XXX
         self._act = U.function([stochastic, ob], [ac, self.vpred])
 
     def act(self, stochastic, ob):
-        ac1, vpred1 =  self._act(stochastic, ob[None])
+        ac1, vpred1 = self._act(stochastic, ob[None])
         return ac1[0], vpred1[0]
+
     def get_variables(self):
         return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, self.scope)
+
     def get_trainable_variables(self):
         return tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, self.scope)
+
     def get_initial_state(self):
         return []
-

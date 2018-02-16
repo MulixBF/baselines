@@ -8,7 +8,7 @@ def main():
     act = deepq.load("mountaincar_model.pkl")
 
     while True:
-        obs, done = env.reset(), False
+        obs, done = env.reset_state(), False
         episode_rew = 0
         while not done:
             env.render()

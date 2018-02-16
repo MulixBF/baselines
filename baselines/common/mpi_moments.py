@@ -1,3 +1,5 @@
+from __future__ import division
+from __future__ import absolute_import
 from mpi4py import MPI
 import numpy as np
 from baselines.common import zipsame
@@ -32,9 +34,9 @@ def mpi_moments(x, axis=0, comm=None, keepdims=False):
 
 def test_runningmeanstd():
     import subprocess
-    subprocess.check_call(['mpirun', '-np', '3', 
-        'python','-c', 
-        'from baselines.common.mpi_moments import _helper_runningmeanstd; _helper_runningmeanstd()'])
+    subprocess.check_call([u'mpirun', u'-np', u'3', 
+        u'python',u'-c', 
+        u'from baselines.common.mpi_moments import _helper_runningmeanstd; _helper_runningmeanstd()'])
 
 def _helper_runningmeanstd():
     comm = MPI.COMM_WORLD
@@ -53,7 +55,7 @@ def _helper_runningmeanstd():
         ms2 = mpi_moments(triple[comm.Get_rank()],axis=axis)
 
         for (a1,a2) in zipsame(ms1, ms2):
-            print(a1, a2)
+            print a1, a2
             assert np.allclose(a1, a2)
-            print("ok!")
+            print u"ok!"
 

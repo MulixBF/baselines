@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import numpy as np
 
 class Buffer(object):
@@ -43,7 +44,7 @@ class Buffer(object):
         y[3:] = np.reshape(1.0 - dones, [nenv, nsteps, 1, 1, 1]).swapaxes(1, 0)  # keep
         y[:3] = 1.0
         # y = np.reshape(1 - dones, [nenvs, nsteps, 1, 1, 1])
-        for i in range(nstack):
+        for i in xrange(nstack):
             obs[-(i + 1), i:] = x
             # obs[:,i:,:,:,-(i+1),:] = x
             x = x[:-1] * y
@@ -76,7 +77,7 @@ class Buffer(object):
     def take(self, x, idx, envx):
         nenv = self.nenv
         out = np.empty([nenv] + list(x.shape[2:]), dtype=x.dtype)
-        for i in range(nenv):
+        for i in xrange(nenv):
             out[i] = x[idx[i], envx[i]]
         return out
 

@@ -16,7 +16,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
     ac = env.action_space.sample()
     new = True
     rew = 0.0
-    ob = env.reset()
+    ob = env.reset_state()
 
     cur_ep_ret = 0
     cur_ep_len = 0
@@ -63,7 +63,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
             ep_lens.append(cur_ep_len)
             cur_ep_ret = 0
             cur_ep_len = 0
-            ob = env.reset()
+            ob = env.reset_state()
         t += 1
 
 def add_vtarg_and_adv(seg, gamma, lam):

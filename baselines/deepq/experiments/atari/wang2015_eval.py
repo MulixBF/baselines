@@ -44,13 +44,13 @@ def wang2015_eval(game_name, act, stochastic):
         done = True
         while True:
             if done:
-                obs = eval_env.reset()
+                obs = eval_env.reset_state()
             eval_episode_steps += 1
             action = act(np.array(obs)[None], stochastic=stochastic)[0]
 
             obs, _reward, done, info = eval_env.step(action)
             if done:
-                obs = eval_env.reset()
+                obs = eval_env.reset_state()
             if len(info["rewards"]) > 0:
                 episode_rewards.append(info["rewards"][0])
                 break

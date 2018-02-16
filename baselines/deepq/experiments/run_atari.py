@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from baselines import deepq
 from baselines.common import set_global_seeds
 from baselines import bench
@@ -7,11 +8,11 @@ from baselines.common.atari_wrappers import make_atari
 
 def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--env', help='environment ID', default='BreakoutNoFrameskip-v4')
-    parser.add_argument('--seed', help='RNG seed', type=int, default=0)
-    parser.add_argument('--prioritized', type=int, default=1)
-    parser.add_argument('--dueling', type=int, default=1)
-    parser.add_argument('--num-timesteps', type=int, default=int(10e6))
+    parser.add_argument(u'--env', help=u'environment ID', default=u'BreakoutNoFrameskip-v4')
+    parser.add_argument(u'--seed', help=u'RNG seed', type=int, default=0)
+    parser.add_argument(u'--prioritized', type=int, default=1)
+    parser.add_argument(u'--dueling', type=int, default=1)
+    parser.add_argument(u'--num-timesteps', type=int, default=int(10e6))
     args = parser.parse_args()
     logger.configure()
     set_global_seeds(args.seed)
@@ -41,5 +42,5 @@ def main():
     env.close()
 
 
-if __name__ == '__main__':
+if __name__ == u'__main__':
     main()

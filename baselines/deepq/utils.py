@@ -1,3 +1,5 @@
+from __future__ import division
+from __future__ import absolute_import
 import os
 
 import tensorflow as tf
@@ -20,28 +22,28 @@ def save_state(fname):
 # ================================================================
 
 class TfInput(object):
-    def __init__(self, name="(unnamed)"):
-        """Generalized Tensorflow placeholder. The main differences are:
+    def __init__(self, name=u"(unnamed)"):
+        u"""Generalized Tensorflow placeholder. The main differences are:
             - possibly uses multiple placeholders internally and returns multiple values
             - can apply light postprocessing to the value feed to placeholder.
         """
         self.name = name
 
     def get(self):
-        """Return the tf variable(s) representing the possibly postprocessed value
+        u"""Return the tf variable(s) representing the possibly postprocessed value
         of placeholder(s).
         """
         raise NotImplemented()
 
     def make_feed_dict(data):
-        """Given data input it to the placeholder(s)."""
+        u"""Given data input it to the placeholder(s)."""
         raise NotImplemented()
 
 
 class PlaceholderTfInput(TfInput):
     def __init__(self, placeholder):
-        """Wrapper for regular tensorflow placeholder."""
-        super().__init__(placeholder.name)
+        u"""Wrapper for regular tensorflow placeholder."""
+        super(PlaceholderTfInput, self).__init__(placeholder.name)
         self._placeholder = placeholder
 
     def get(self):
@@ -52,7 +54,7 @@ class PlaceholderTfInput(TfInput):
 
 class BatchInput(PlaceholderTfInput):
     def __init__(self, shape, dtype=tf.float32, name=None):
-        """Creates a placeholder for a batch of tensors of a given shape and dtype
+        u"""Creates a placeholder for a batch of tensors of a given shape and dtype
 
         Parameters
         ----------
@@ -63,11 +65,11 @@ class BatchInput(PlaceholderTfInput):
         name: str
             name of the underlying placeholder
         """
-        super().__init__(tf.placeholder(dtype, [None] + list(shape), name=name))
+        super(BatchInput, self).__init__(tf.placeholder(dtype, [None] + list(shape), name=name))
 
 class Uint8Input(PlaceholderTfInput):
     def __init__(self, shape, name=None):
-        """Takes input in uint8 format which is cast to float32 and divided by 255
+        u"""Takes input in uint8 format which is cast to float32 and divided by 255
         before passing it to the model.
 
         On GPU this ensures lower data transfer times.
@@ -80,9 +82,9 @@ class Uint8Input(PlaceholderTfInput):
             name of the underlying placeholder
         """
 
-        super().__init__(tf.placeholder(tf.uint8, [None] + list(shape), name=name))
+        super(Uint8Input, self).__init__(tf.placeholder(tf.uint8, [None] + list(shape), name=name))
         self._shape = shape
-        self._output = tf.cast(super().get(), tf.float32) / 255.0
+        self._output = tf.cast(super(Uint8Input, self).get(), tf.float32) / 255.0
 
     def get(self):
         return self._output

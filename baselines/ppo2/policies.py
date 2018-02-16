@@ -3,6 +3,7 @@ import tensorflow as tf
 from baselines.a2c.utils import conv, fc, conv_to_fc, batch_to_seq, seq_to_batch, lstm, lnlstm
 from baselines.common.distributions import make_pdtype
 
+
 def nature_cnn(unscaled_images):
     """
     CNN from Nature paper.
@@ -14,6 +15,7 @@ def nature_cnn(unscaled_images):
     h3 = activ(conv(h2, 'c3', nf=64, rf=3, stride=1, init_scale=np.sqrt(2)))
     h3 = conv_to_fc(h3)
     return activ(fc(h3, 'fc1', nh=512, init_scale=np.sqrt(2)))
+
 
 class LnLstmPolicy(object):
     def __init__(self, sess, ob_space, ac_space, nbatch, nsteps, nlstm=256, reuse=False):
@@ -54,6 +56,7 @@ class LnLstmPolicy(object):
         self.vf = vf
         self.step = step
         self.value = value
+
 
 class LstmPolicy(object):
 
@@ -97,6 +100,7 @@ class LstmPolicy(object):
         self.step = step
         self.value = value
 
+
 class CnnPolicy(object):
 
     def __init__(self, sess, ob_space, ac_space, nbatch, nsteps, reuse=False): #pylint: disable=W0613
@@ -128,6 +132,7 @@ class CnnPolicy(object):
         self.vf = vf
         self.step = step
         self.value = value
+
 
 class MlpPolicy(object):
     def __init__(self, sess, ob_space, ac_space, nbatch, nsteps, reuse=False): #pylint: disable=W0613

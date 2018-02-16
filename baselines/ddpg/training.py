@@ -45,9 +45,9 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         sess.graph.finalize()
 
         agent.reset()
-        obs = env.reset()
+        obs = env.reset_state()
         if eval_env is not None:
-            eval_obs = eval_env.reset()
+            eval_obs = eval_env.reset_state()
         done = False
         episode_reward = 0.
         episode_step = 0
@@ -101,7 +101,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         episodes += 1
 
                         agent.reset()
-                        obs = env.reset()
+                        obs = env.reset_state()
 
                 # Train.
                 epoch_actor_losses = []
@@ -132,7 +132,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
                         eval_qs.append(eval_q)
                         if eval_done:
-                            eval_obs = eval_env.reset()
+                            eval_obs = eval_env.reset_state()
                             eval_episode_rewards.append(eval_episode_reward)
                             eval_episode_rewards_history.append(eval_episode_reward)
                             eval_episode_reward = 0.

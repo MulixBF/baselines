@@ -1,3 +1,6 @@
+from __future__ import division
+from __future__ import with_statement
+from __future__ import absolute_import
 import os.path as osp
 import time
 import joblib
@@ -12,13 +15,15 @@ from baselines.a2c.utils import discount_with_dones
 from baselines.a2c.utils import Scheduler, find_trainable_variables
 from baselines.a2c.utils import cat_entropy, mse
 from baselines.acktr import kfac
+from itertools import izip
+from io import open
 
 
 class Model(object):
 
     def __init__(self, policy, ob_space, ac_space, nenvs,total_timesteps, nprocs=32, nsteps=20,
                  ent_coef=0.01, vf_coef=0.5, vf_fisher_coef=1.0, lr=0.25, max_grad_norm=0.5,
-                 kfac_clip=0.001, lrschedule='linear'):
+                 kfac_clip=0.001, lrschedule=u'linear'):
         config = tf.ConfigProto(allow_soft_placement=True,
                                 intra_op_parallelism_threads=nprocs,
                                 inter_op_parallelism_threads=nprocs)
@@ -52,23 +57,23 @@ class Model(object):
         self.vf_fisher = vf_fisher_loss = - vf_fisher_coef*tf.reduce_mean(tf.pow(train_model.vf - tf.stop_gradient(sample_net), 2))
         self.joint_fisher = joint_fisher_loss = pg_fisher_loss + vf_fisher_loss
 
-        self.params=params = find_trainable_variables("model")
+        self.params=params = find_trainable_variables(u"model")
 
         self.grads_check = grads = tf.gradients(train_loss,params)
 
-        with tf.device('/gpu:0'):
+        with tf.device(u'/gpu:0'):
             self.optim = optim = kfac.KfacOptimizer(learning_rate=PG_LR, clip_kl=kfac_clip,\
                 momentum=0.9, kfac_update=1, epsilon=0.01,\
                 stats_decay=0.99, async=1, cold_iter=10, max_grad_norm=max_grad_norm)
 
             update_stats_op = optim.compute_and_apply_stats(joint_fisher_loss, var_list=params)
-            train_op, q_runner = optim.apply_gradients(list(zip(grads,params)))
+            train_op, q_runner = optim.apply_gradients(list(izip(grads,params)))
         self.q_runner = q_runner
         self.lr = Scheduler(v=lr, nvalues=total_timesteps, schedule=lrschedule)
 
         def train(obs, states, rewards, masks, actions, values):
             advs = rewards - values
-            for step in range(len(obs)):
+            for step in xrange(len(obs)):
                 cur_lr = self.lr.value()
 
             td_map = {train_model.X:obs, A:actions, ADV:advs, R:rewards, PG_LR:cur_lr}
@@ -89,7 +94,7 @@ class Model(object):
         def load(load_path):
             loaded_params = joblib.load(load_path)
             restores = []
-            for p, loaded_p in zip(params, loaded_params):
+            for p, loaded_p in izip(params, loaded_params):
                 restores.append(p.assign(loaded_p))
             sess.run(restores)
 
@@ -107,7 +112,7 @@ class Model(object):
 
 def learn(policy, env, seed, total_timesteps=int(40e6), gamma=0.99, log_interval=1, nprocs=32, nsteps=20,
                  ent_coef=0.01, vf_coef=0.5, vf_fisher_coef=1.0, lr=0.25, max_grad_norm=0.5,
-                 kfac_clip=0.001, save_interval=None, lrschedule='linear'):
+                 kfac_clip=0.001, save_interval=None, lrschedule=u'linear'):
     tf.reset_default_graph()
     set_global_seeds(seed)
 
@@ -120,7 +125,7 @@ def learn(policy, env, seed, total_timesteps=int(40e6), gamma=0.99, log_interval
                                 lrschedule=lrschedule)
     if save_interval and logger.get_dir():
         import cloudpickle
-        with open(osp.join(logger.get_dir(), 'make_model.pkl'), 'wb') as fh:
+        with open(osp.join(logger.get_dir(), u'make_model.pkl'), u'wb') as fh:
             fh.write(cloudpickle.dumps(make_model))
     model = make_model()
 
@@ -129,7 +134,7 @@ def learn(policy, env, seed, total_timesteps=int(40e6), gamma=0.99, log_interval
     tstart = time.time()
     coord = tf.train.Coordinator()
     enqueue_threads = model.q_runner.create_threads(model.sess, coord=coord, start=True)
-    for update in range(1, total_timesteps//nbatch+1):
+    for update in xrange(1, total_timesteps//nbatch+1):
         obs, states, rewards, masks, actions, values = runner.run()
         policy_loss, value_loss, policy_entropy = model.train(obs, states, rewards, masks, actions, values)
         model.old_obs = obs
@@ -137,18 +142,18 @@ def learn(policy, env, seed, total_timesteps=int(40e6), gamma=0.99, log_interval
         fps = int((update*nbatch)/nseconds)
         if update % log_interval == 0 or update == 1:
             ev = explained_variance(values, rewards)
-            logger.record_tabular("nupdates", update)
-            logger.record_tabular("total_timesteps", update*nbatch)
-            logger.record_tabular("fps", fps)
-            logger.record_tabular("policy_entropy", float(policy_entropy))
-            logger.record_tabular("policy_loss", float(policy_loss))
-            logger.record_tabular("value_loss", float(value_loss))
-            logger.record_tabular("explained_variance", float(ev))
+            logger.record_tabular(u"nupdates", update)
+            logger.record_tabular(u"total_timesteps", update*nbatch)
+            logger.record_tabular(u"fps", fps)
+            logger.record_tabular(u"policy_entropy", float(policy_entropy))
+            logger.record_tabular(u"policy_loss", float(policy_loss))
+            logger.record_tabular(u"value_loss", float(value_loss))
+            logger.record_tabular(u"explained_variance", float(ev))
             logger.dump_tabular()
 
         if save_interval and (update % save_interval == 0 or update == 1) and logger.get_dir():
-            savepath = osp.join(logger.get_dir(), 'checkpoint%.5i'%update)
-            print('Saving to', savepath)
+            savepath = osp.join(logger.get_dir(), u'checkpoint%.5i'%update)
+            print u'Saving to', savepath
             model.save(savepath)
     coord.request_stop()
     coord.join(enqueue_threads)

@@ -28,7 +28,7 @@ def traj_segment_generator(pi, env, reward_giver, horizon, stochastic):
     new = True
     rew = 0.0
     true_rew = 0.0
-    ob = env.reset()
+    ob = env.reset_state()
 
     cur_ep_ret = 0
     cur_ep_len = 0
@@ -84,7 +84,7 @@ def traj_segment_generator(pi, env, reward_giver, horizon, stochastic):
             cur_ep_ret = 0
             cur_ep_true_ret = 0
             cur_ep_len = 0
-            ob = env.reset()
+            ob = env.reset_state()
         t += 1
 
 

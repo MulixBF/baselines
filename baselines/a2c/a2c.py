@@ -97,7 +97,7 @@ class Runner(object):
         self.batch_ob_shape = (nenv*nsteps, nh, nw, nc)
         self.obs = np.zeros((nenv, nh, nw, nc), dtype=np.uint8)
         self.nc = nc
-        obs = env.reset()
+        obs = env.reset_state()
         self.gamma = gamma
         self.nsteps = nsteps
         self.states = model.initial_state

@@ -41,14 +41,14 @@ def play(env, act, stochastic, video_path):
     video_recorder = None
     video_recorder = VideoRecorder(
         env, video_path, enabled=video_path is not None)
-    obs = env.reset()
+    obs = env.reset_state()
     while True:
         env.unwrapped.render()
         video_recorder.capture_frame()
         action = act(np.array(obs)[None], stochastic=stochastic)[0]
         obs, rew, done, info = env.step(action)
         if done:
-            obs = env.reset()
+            obs = env.reset_state()
         if len(info["rewards"]) > num_episodes:
             if len(info["rewards"]) == 1 and video_recorder.enabled:
                 # save video of first episode

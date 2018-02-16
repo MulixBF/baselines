@@ -1,28 +1,23 @@
+from __future__ import absolute_import
 from setuptools import setup, find_packages
-import sys
 
-if sys.version_info.major != 3:
-    print("This Python is only compatible with Python 3, but you are running "
-          "Python {}. The installation will likely fail.".format(sys.version_info.major))
-
-
-setup(name='baselines',
+setup(name=u'baselines',
       packages=[package for package in find_packages()
-                if package.startswith('baselines')],
+                if package.startswith(u'baselines')],
       install_requires=[
-          'gym[mujoco,atari,classic_control]',
-          'scipy',
-          'tqdm',
-          'joblib',
-          'zmq',
-          'dill',
-          'azure==1.0.3',
-          'progressbar2',
-          'mpi4py',
-          'cloudpickle',
+          u'gym',
+          u'scipy',
+          u'tqdm',
+          u'joblib',
+          u'zmq',
+          u'dill',
+          u'azure==1.0.3',
+          u'progressbar2',
+          u'mpi4py',
+          u'cloudpickle',
       ],
-      description="OpenAI baselines: high quality implementations of reinforcement learning algorithms",
-      author="OpenAI",
-      url='https://github.com/openai/baselines',
-      author_email="gym@openai.com",
-      version="0.1.4")
+      description=u"OpenAI baselines: high quality implementations of reinforcement learning algorithms",
+      author=u"OpenAI",
+      url=u'https://github.com/openai/baselines',
+      author_email=u"gym@openai.com",
+      version=u"0.1.4")

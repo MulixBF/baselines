@@ -1,3 +1,5 @@
+from __future__ import division
+from __future__ import absolute_import
 from .running_stat import RunningStat
 from collections import deque
 import numpy as np
@@ -26,7 +28,7 @@ class CompositionFilter(Filter):
         return out
 
 class ZFilter(Filter):
-    """
+    u"""
     y = (x-mean)/std
     using running estimates of mean,std
     """
